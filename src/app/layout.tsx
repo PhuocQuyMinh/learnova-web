@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import Header from "@/components/Header"; // <--- Import Header
-
+import Footer from "@/components/Footer"; // Import Footer
 // Cấu hình font Inter
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -31,6 +31,8 @@ export default function RootLayout({
           <main className="min-h-screen bg-white">
             {children}
           </main>
+
+          <Footer /> {/* Thêm Footer vào cuối trang */}
         </AntdRegistry>
       </body>
     </html>
