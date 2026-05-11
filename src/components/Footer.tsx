@@ -84,16 +84,33 @@ export default function Footer() {
                                 href={contactInfo?.facebook}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl hover:bg-learnova-purple transition-colors text-white"
+                                /* Đã thêm dấu ! và mã Hex trực tiếp */
+                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl !text-[#A435F0] hover:!bg-[#A435F0] hover:!text-white transition-all"
                             >
                                 <FacebookFilled />
                             </a>
                         </div>
 
                         <h3 className="text-white font-bold text-lg mb-4">Pháp lý</h3>
-                        <ul className="space-y-2 p-0 list-none text-gray-400 text-sm">
-                            <li><Link href="/terms" className="hover:text-white">Điều khoản sử dụng</Link></li>
-                            <li><Link href="/privacy" className="hover:text-white">Chính sách bảo mật</Link></li>
+                        <ul className="space-y-2 p-0 list-none text-sm">
+                            <li>
+                                <Link
+                                    href="/terms"
+                                    /* Đã thêm dấu ! và mã Hex trực tiếp */
+                                    className="!text-[#A435F0] hover:!text-[#8e2ce0] transition-colors font-medium block py-1"
+                                >
+                                    Điều khoản sử dụng
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/privacy"
+                                    /* Đã thêm dấu ! và mã Hex trực tiếp */
+                                    className="!text-[#A435F0] hover:!text-[#8e2ce0] transition-colors font-medium block py-1"
+                                >
+                                    Chính sách bảo mật
+                                </Link>
+                            </li>
                         </ul>
                     </Col>
                 </Row>
@@ -107,20 +124,20 @@ export default function Footer() {
             </div>
 
             <style jsx global>{`
-        .footer-about-us h3 {
-          color: #ffffff;
-          font-size: 1rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          margin-top: 1.5rem;
-        }
-        .footer-about-us p {
-          margin-bottom: 0.75rem;
-        }
-        .footer-about-us strong {
-          color: #a435f0;
-        }
-      `}</style>
+                .footer-about-us h3 {
+                    color: #ffffff;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                    margin-top: 1.5rem;
+                }
+                .footer-about-us p {
+                    margin-bottom: 0.75rem;
+                }
+                .footer-about-us strong {
+                    color: var(--color-learnova-purple);
+                }
+            `}</style>
         </footer>
     );
 }

@@ -13,8 +13,15 @@ export default function Header() {
     const { categories, isLoading, fetchCategories } = useCategoryStore(); // Lấy data từ Store
     const router = useRouter();
     const pathname = usePathname();
-
     const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
+    const [searchValue, setSearchValue] = useState("");
+
+    // Hàm xử lý tìm kiếm
+    const handleSearch = () => {
+        if (searchValue.trim()) {
+            router.push(`/search?keyword=${encodeURIComponent(searchValue)}`);
+        }
+    };
 
     // Gọi API ngay khi Component Header được khởi tạo
     useEffect(() => {
@@ -44,12 +51,13 @@ export default function Header() {
                         className="
       rounded-full bg-[#f7f9fa] h-11 w-full border-gray-300 
       transition-all duration-300
-      /* Hiệu ứng khi di chuột vào */
       hover:!border-[#A435F0] 
-      /* Hiệu ứng khi click vào để nhập liệu (Focus) */
       focus:!border-[#A435F0] 
       focus:!shadow-[0_0_0_2px_rgba(164,53,240,0.1)]
     "
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        onPressEnter={handleSearch}
                     />
                 </div>
                 <div className="flex items-center justify-end gap-5 flex-shrink-0 min-w-[350px]">
@@ -81,7 +89,11 @@ export default function Header() {
                                 <Link href="/register">
                                     <Button
                                         type="primary"
-                                        className="font-bold h-10 px-5 bg-learnova-purple hover:!bg-learnova-purple-hover border-none rounded-learnova transition-all"
+                                        /* 1. Sử dụng !bg-learnova-purple và !hover:bg-learnova-purple-hover */
+                                        /* 2. Đổi rounded-learnova thành rounded-none nếu bạn muốn kiểu sắc sảo của Udemy */
+                                        className="font-bold h-10 px-5 !bg-[#A435F0] hover:!bg-[#8e2ce0] border-none rounded-none transition-all"
+                                        /* 3. Thêm style inline để đảm bảo Antd không ghi đè màu xanh lúc mới load trang */
+                                        style={{ backgroundColor: '#A435F0' }}
                                     >
                                         Đăng ký
                                     </Button>
