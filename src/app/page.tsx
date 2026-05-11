@@ -18,62 +18,59 @@ export default function Home() {
 
   return (
     <div className="pb-20 bg-white">
-      {/* PHẦN CHÀO MỪNG (Welcome Section) */}
-      <section className="bg-[#f8f9fb] border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-10 flex items-center gap-6">
-          {/* Ảnh đại diện lớn */}
-          <Avatar
-            size={80}
-            src={user?.avatarUrl}
-            icon={<UserOutlined />}
-            className="bg-[#1c1d1f] shadow-sm flex-shrink-0"
-          />
-
-          <div className="flex flex-col">
-            <Title level={2} className="!m-0 !text-2xl !font-bold text-gray-900">
-              {user ? `Chào mừng ${user.fullName} đã trở lại!` : "Chào mừng bạn đến với Leanova!"}
-            </Title>
-            <Text className="text-gray-600 text-lg mt-1">
-              {user
-                ? "Hôm nay bạn muốn học thêm kỹ năng gì mới không?"
-                : "Đăng nhập để lưu lại tiến trình học tập của bạn."
-              }
-            </Text>
-
-            {!user && (
-              <div className="mt-4">
-                <Link href="/login">
-                  <Button type="primary" className="bg-[#A435F0] hover:!bg-[#8e2ce0] border-none font-bold h-10">
-                    Bắt đầu học ngay
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
+      {/* PHẦN CHÀO MỪNG */}
+      <section className="bg-learnova-light-gray py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Sử dụng class text-h2 đã định nghĩa trong globals.css */}
+          <h1 className="text-h2 mb-2">
+            Chào mừng Trịnh Ạt Min đã trở lại!
+          </h1>
+          <p className="text-body">
+            Học tập mỗi ngày để mở rộng cánh cửa tương lai.
+          </p>
         </div>
       </section>
 
-      {/* PHẦN NỘI DUNG TIẾP THEO (Ví dụ: Khóa học đang học) */}
       {user && (
         <section className="max-w-7xl mx-auto px-6 mt-12">
-          <div className="flex justify-between items-center mb-6">
-            <Title level={3} className="!m-0">Tiếp tục việc học của bạn</Title>
-            <Link href="/my-learning" className="text-[#A435F0] font-bold hover:underline flex items-center gap-1">
+          {/* Header section sử dụng text-h2 đồng nhất */}
+          <div className="flex justify-between items-end mb-6">
+            <h2 className="text-h2 m-0">Tiếp tục việc học của bạn</h2>
+            <Link
+              href="/my-learning"
+              className="text-learnova-purple font-bold hover:text-learnova-purple-hover hover:underline flex items-center gap-1 mb-1"
+            >
               Xem tất cả <RightOutlined className="text-xs" />
             </Link>
           </div>
 
           {/* Demo một thẻ khóa học đang học dở */}
-          <Card className="max-w-md border-gray-200 hover:shadow-md transition-shadow cursor-pointer">
+          <Card
+            hoverable
+            className="max-w-md border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+            styles={{ body: { padding: '16px' } }}
+          >
             <div className="flex gap-4">
+              {/* Thumbnail ảnh khóa học */}
               <div className="w-24 h-24 bg-gray-200 rounded flex-shrink-0" />
-              <div>
-                <Text strong className="block text-base">Lập trình React cho người mới bắt đầu</Text>
-                <Text className="text-gray-500 block text-sm">Bài 12: Quản lý State với Zustand</Text>
-                <div className="w-full bg-gray-200 h-1.5 mt-4 rounded-full overflow-hidden">
-                  <div className="bg-[#A435F0] h-full w-[65%]" />
+
+              {/* Chi tiết tiến độ */}
+              <div className="flex flex-col justify-center flex-1">
+                {/* Sử dụng text-body và font-bold cho tiêu đề khóa học */}
+                <h3 className="text-body font-bold mb-1 line-clamp-2 leading-tight">
+                  Lập trình React cho người mới bắt đầu
+                </h3>
+                {/* Sử dụng text-caption cho tên bài giảng hiện tại */}
+                <p className="text-caption mb-3">Bài 12: Quản lý State với Zustand</p>
+
+                {/* Thanh tiến độ sử dụng màu learnova-purple */}
+                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-learnova-purple h-full w-[65%]" />
                 </div>
-                <Text className="text-[12px] text-gray-500 mt-1 block">Đã hoàn thành 65%</Text>
+
+                <span className="text-[12px] text-gray-500 font-medium mt-2 block">
+                  Đã hoàn thành 65%
+                </span>
               </div>
             </div>
           </Card>
@@ -82,12 +79,13 @@ export default function Home() {
 
       <section className="max-w-7xl mx-auto px-6 mt-12">
         <div className="mb-8">
-          <Title level={3} className="!mb-2 !text-2xl !font-extrabold tracking-tight">
+          {/* Dùng chung class text-h2, đảm bảo đẹp y hệt tiêu đề trên */}
+          <h2 className="text-h2 mb-1">
             Các khóa học thịnh hành
-          </Title>
-          <Text className="text-gray-500 text-base">
-            Những lựa chọn hàng đầu từ cộng đồng học viên Leanova
-          </Text>
+          </h2>
+          <p className="text-caption">
+            Cập nhật những xu hướng kiến thức mới nhất
+          </p>
         </div>
 
         {isLoading ? (

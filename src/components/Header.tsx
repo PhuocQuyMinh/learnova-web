@@ -81,8 +81,7 @@ export default function Header() {
                                 <Link href="/register">
                                     <Button
                                         type="primary"
-                                        className="font-bold h-10 px-5 bg-[#A435F0] hover:!bg-[#8e2ce0] border-none rounded-none transition-all"
-                                        style={{ backgroundColor: '#A435F0' }}
+                                        className="font-bold h-10 px-5 bg-learnova-purple hover:!bg-learnova-purple-hover border-none rounded-learnova transition-all"
                                     >
                                         Đăng ký
                                     </Button>

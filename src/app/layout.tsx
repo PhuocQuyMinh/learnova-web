@@ -4,7 +4,11 @@ import "./globals.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import Header from "@/components/Header"; // <--- Import Header
 
-const inter = Inter({ subsets: ["latin"] });
+// Cấu hình font Inter
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-inter", // Tạo biến CSS để Tailwind v4 dùng
+});
 
 export const metadata: Metadata = {
   title: "Leanova - Nền tảng học trực tuyến",
