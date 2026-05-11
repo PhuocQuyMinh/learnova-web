@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+
 import {
     Row, Col, Rate, Button, Collapse, Skeleton,
     Breadcrumb, Tag, message, Avatar, Modal, Divider, Spin
@@ -22,11 +23,15 @@ import {
     StarOutlined
 } from "@ant-design/icons";
 import Link from "next/link";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const { Panel } = Collapse;
 
 export default function CourseDetailPage() {
     const params = useParams();
+    const router = useRouter(); // Đã có sẵn
+    const { user } = useAuthStore(); // Lấy thông tin user hiện tại
+
     const courseId = params.id;
 
     // State Khóa học
@@ -62,6 +67,27 @@ export default function CourseDetailPage() {
         } finally {
             setLoadingInstructor(false);
         }
+    };
+
+    // Thêm 2 hàm xử lý click này:
+    const handleBuyNow = () => {
+        if (!user) {
+            message.warning("Vui lòng đăng nhập để mua khóa học!");
+            router.push("/login");
+            return;
+        }
+        // Xử lý logic mua ngay cho user đã đăng nhập (sẽ làm ở các bước sau)
+        message.success("Chuyển đến trang thanh toán...");
+    };
+
+    const handleAddToCart = () => {
+        if (!user) {
+            message.warning("Vui lòng đăng nhập để thêm vào giỏ hàng!");
+            router.push("/login");
+            return;
+        }
+        // Xử lý logic thêm giỏ hàng cho user đã đăng nhập (sẽ làm ở các bước sau)
+        message.success("Đã thêm khóa học vào giỏ hàng!");
     };
 
     // 1. Fetch dữ liệu Khóa học và 4 Review nổi bật khi load trang
@@ -361,13 +387,14 @@ export default function CourseDetailPage() {
                                         type="primary"
                                         size="large"
                                         className="h-12 !bg-learnova-purple hover:!bg-learnova-purple-hover border-none font-bold text-lg rounded-none transition-all"
-                                        onClick={() => message.info("Vui lòng đăng nhập để mua khóa học")}
+                                        onClick={handleBuyNow}
                                     >
                                         Mua ngay
                                     </Button>
                                     <Button
                                         size="large"
                                         className="h-12 border-gray-900 text-gray-900 font-bold hover:!text-learnova-purple hover:!border-learnova-purple rounded-none transition-all"
+                                        onClick={handleAddToCart}
                                     >
                                         Thêm vào giỏ hàng
                                     </Button>
