@@ -21,9 +21,9 @@ export default function Home() {
       {/* PHẦN CHÀO MỪNG */}
       <section className="bg-learnova-light-gray py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          {/* Sử dụng class text-h2 đã định nghĩa trong globals.css */}
+          {/* Sử dụng dữ liệu động từ user, nếu chưa đăng nhập thì hiển thị chữ "bạn" */}
           <h1 className="text-h2 mb-2">
-            Chào mừng Trịnh Ạt Min đã trở lại!
+            Chào mừng {user?.fullName || "bạn"} đã trở lại!
           </h1>
           <p className="text-body">
             Học tập mỗi ngày để mở rộng cánh cửa tương lai.

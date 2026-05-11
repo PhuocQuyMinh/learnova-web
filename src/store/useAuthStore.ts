@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware'; // Thêm middleware
 
 interface User {
     id: number;
@@ -15,9 +16,17 @@ interface AuthState {
     logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-    token: null,
-    user: null,
-    login: (token, user) => set({ token, user }),
-    logout: () => set({ token: null, user: null }),
-}));
+export const useAuthStore = create<AuthState>()(
+    persist(
+        (set) => ({
+            token: null,
+            user: null,
+            login: (token, user) => set({ token, user }),
+            logout: () => set({ token: null, user: null }),
+        }),
+        {
+            name: 'learnova-auth', // Tên key sẽ lưu trong localStorage
+            storage: createJSONStorage(() => localStorage), // Lưu vào ổ cứng trình duyệt
+        }
+    )
+);

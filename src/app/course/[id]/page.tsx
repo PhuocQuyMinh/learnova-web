@@ -30,8 +30,7 @@ const { Panel } = Collapse;
 export default function CourseDetailPage() {
     const params = useParams();
     const router = useRouter(); // Đã có sẵn
-    const { user } = useAuthStore(); // Lấy thông tin user hiện tại
-
+    const { user, token } = useAuthStore(); // Lấy thêm token ra    
     const courseId = params.id;
 
     // State Khóa học
@@ -52,6 +51,9 @@ export default function CourseDetailPage() {
     const [instructorProfile, setInstructorProfile] = useState<any>(null);
     const [loadingInstructor, setLoadingInstructor] = useState(false);
 
+    // Thêm state để tạo hiệu ứng loading khi đang chờ link VNPay
+    const [isBuying, setIsBuying] = useState(false);
+
     // Hàm xử lý khi click tên giảng viên
     const handleOpenInstructorModal = async (instructorId: number) => {
         setIsInstructorModalOpen(true);
@@ -69,15 +71,58 @@ export default function CourseDetailPage() {
         }
     };
 
-    // Thêm 2 hàm xử lý click này:
-    const handleBuyNow = () => {
-        if (!user) {
+
+    const handleBuyNow = async () => {
+        if (!user || !token) {
             message.warning("Vui lòng đăng nhập để mua khóa học!");
             router.push("/login");
             return;
         }
-        // Xử lý logic mua ngay cho user đã đăng nhập (sẽ làm ở các bước sau)
-        message.success("Chuyển đến trang thanh toán...");
+
+        setIsBuying(true);
+        message.loading({ content: "Đang tạo giao dịch...", key: "checkout" });
+
+        try {
+            // 1. Thêm vào giỏ hàng trước
+            const cartRes = await fetch("http://localhost:8000/api/store/cart", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` // Truyền Token lấy từ Store
+                },
+                body: JSON.stringify({ courseId }),
+            });
+
+            // Xử lý mượt mà: Nếu backend báo "Đã có trong giỏ hàng", ta cứ lờ đi và nhảy tiếp sang thanh toán
+            const cartData = await cartRes.json();
+            if (!cartRes.ok && cartData.message !== 'Khóa học này đã có trong giỏ hàng!') {
+                throw new Error(cartData.message || "Lỗi khi thêm vào giỏ hàng");
+            }
+
+            // 2. Gọi API Checkout để sinh link VNPay
+            const checkoutRes = await fetch("http://localhost:8000/api/store/checkout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` // Tiếp tục truyền Token
+                }
+            });
+
+            const checkoutData = await checkoutRes.json();
+
+            if (checkoutRes.ok && checkoutData.status === "success") {
+                message.success({ content: "Đang chuyển hướng đến VNPay...", key: "checkout" });
+                // 3. Chuyển hướng người dùng sang link VNPay
+                window.location.href = checkoutData.data.paymentUrl;
+            } else {
+                throw new Error(checkoutData.message || "Lỗi khi khởi tạo đơn hàng");
+            }
+        } catch (error: any) {
+            console.error("Lỗi mua ngay:", error);
+            message.error({ content: error.message || "Có lỗi xảy ra, vui lòng thử lại!", key: "checkout" });
+        } finally {
+            setIsBuying(false);
+        }
     };
 
     const handleAddToCart = () => {

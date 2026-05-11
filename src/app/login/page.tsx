@@ -18,7 +18,6 @@ export default function LoginPage() {
     const onFinish = async (values: any) => {
         setLoading(true);
         try {
-            // Thay đổi URL này thành endpoint API thực tế của backend
             const response = await fetch("http://localhost:8000/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -30,14 +29,21 @@ export default function LoginPage() {
 
             const data = await response.json();
 
-            if (data.status === "success") {
+            // Kiểm tra linh hoạt: response.ok (mã 200) hoặc có chữ success
+            if (response.ok && data.status === "success") {
                 message.success("Đăng nhập thành công!");
-                // Lưu token và thông tin user vào Zustand
-                loginAction(data.token, data.data.user);
-                // Chuyển hướng người dùng (ví dụ: về trang chủ hoặc dashboard)
+
+                // TRÍCH XUẤT AN TOÀN: 
+                // Lấy token và user dù nó nằm ở ngoài cùng hay bọc trong object data
+                const token = data.token || data.data?.token;
+                const userData = data.user || data.data?.user;
+
+                // Lưu vào Zustand (Middleware Persist sẽ tự động ghi vào localStorage)
+                loginAction(token, userData);
+
+                // Chuyển hướng về trang chủ
                 router.push("/");
             } else {
-                // Hiển thị message lỗi từ backend trả về
                 message.error(data.message || "Đăng nhập thất bại. Vui lòng thử lại!");
             }
         } catch (error) {
