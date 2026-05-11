@@ -1,17 +1,23 @@
 "use client";
-
+import { useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Avatar, Typography, Button, Card } from "antd";
+import { useCourseStore } from "@/store/useCourseStore";
+import { Avatar, Typography, Skeleton, Button, Card, Row, Col } from "antd";
 import { UserOutlined, RightOutlined } from "@ant-design/icons";
 import Link from "next/link";
-
+import CourseCard from "@/components/CourseCard";
 const { Title, Text } = Typography;
 
 export default function Home() {
   const { user } = useAuthStore();
+  const { trendingCourses, isLoading, fetchTrendingCourses } = useCourseStore();
+
+  useEffect(() => {
+    fetchTrendingCourses();
+  }, [fetchTrendingCourses]);
 
   return (
-    <div className="pb-20">
+    <div className="pb-20 bg-white">
       {/* PHẦN CHÀO MỪNG (Welcome Section) */}
       <section className="bg-[#f8f9fb] border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-10 flex items-center gap-6">
@@ -73,6 +79,40 @@ export default function Home() {
           </Card>
         </section>
       )}
+
+      <section className="max-w-7xl mx-auto px-6 mt-12">
+        <div className="mb-8">
+          <Title level={3} className="!mb-2 !text-2xl !font-extrabold tracking-tight">
+            Các khóa học thịnh hành
+          </Title>
+          <Text className="text-gray-500 text-base">
+            Những lựa chọn hàng đầu từ cộng đồng học viên Leanova
+          </Text>
+        </div>
+
+        {isLoading ? (
+          // Hiển thị Skeleton khi đang tải dữ liệu
+          <Row gutter={[20, 24]}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Col key={i} xs={24} sm={12} md={8} lg={6} xl={4.8}>
+                <Skeleton active />
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          // Hiển thị danh sách khóa học thực tế
+          <Row gutter={[20, 24]}>
+            {trendingCourses.map((item) => (
+              <Col key={item.courseId} xs={24} sm={12} md={8} lg={6} xl={4.8}>
+                <CourseCard
+                  course={item.Course}
+                  enrollmentCount={item.enrollmentCount}
+                />
+              </Col>
+            ))}
+          </Row>
+        )}
+      </section>
     </div>
   );
 }
