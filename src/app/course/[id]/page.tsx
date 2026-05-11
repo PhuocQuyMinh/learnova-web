@@ -276,9 +276,14 @@ export default function CourseDetailPage() {
                                                             {lesson.title}
                                                         </span>
                                                     </div>
+
                                                     <div className="flex items-center gap-4">
                                                         {lesson.isPreviewable && (
-                                                            <span className="text-learnova-purple underline cursor-pointer text-sm font-medium">Học thử</span>
+                                                            <Link
+                                                                href={`/learn/${courseId}/lesson/${lesson.id}`}
+                                                                className="!text-[#A435F0] hover:!text-[#8e2ce0] underline cursor-pointer text-sm font-medium transition-colors"                                                            >
+                                                                Học thử
+                                                            </Link>
                                                         )}
                                                         <span className="text-gray-400 text-sm">{lesson.durationString}</span>
                                                     </div>
@@ -536,6 +541,6 @@ export default function CourseDetailPage() {
           padding: 0 24px !important;
         }
       `}</style>
-        </div>
+        </div >
     );
 }
