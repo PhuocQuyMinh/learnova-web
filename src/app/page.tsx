@@ -51,9 +51,12 @@ export default function Home() {
             styles={{ body: { padding: '16px' } }}
           >
             <div className="flex gap-4">
-              {/* Thumbnail ảnh khóa học */}
-              <div className="w-24 h-24 bg-gray-200 rounded flex-shrink-0" />
-
+              {/* Thumbnail ảnh khóa học - Thay div placeholder bằng ảnh thật */}
+              <img
+                src="https://tas.co.in/wp-content/uploads/2025/08/nodejs-768x768.jpg"
+                alt="Khóa học Node.js Express RESTful API"
+                className="w-24 h-24 object-cover rounded flex-shrink-0"
+              />
               {/* Chi tiết tiến độ */}
               <div className="flex flex-col justify-center flex-1">
                 {/* Sử dụng text-body và font-bold cho tiêu đề khóa học */}
