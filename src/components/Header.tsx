@@ -12,11 +12,14 @@ import {
 } from "@ant-design/icons";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCategoryStore } from "@/store/useCategoryStore";
+import { useCartStore } from "@/store/useCartStore"; // 1. Import Cart Store
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Header() {
-    const { user, logout } = useAuthStore();
+    const { user, token, logout } = useAuthStore(); // Lấy thêm token để gọi API
     const { categories, isLoading, fetchCategories } = useCategoryStore();
+    const { items, fetchCart } = useCartStore(); // 2. Lấy danh sách items và hàm fetchCart
+
     const router = useRouter();
     const pathname = usePathname();
     const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
@@ -26,6 +29,13 @@ export default function Header() {
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
+
+    // 3. Tự động lấy số lượng giỏ hàng mới nhất ngay khi người dùng đăng nhập (có token)
+    useEffect(() => {
+        if (token) {
+            fetchCart(token);
+        }
+    }, [token, fetchCart]);
 
     // Hàm điều hướng yêu cầu đăng nhập
     const handleProtectedNavigation = (path: string, actionName: string) => {
@@ -112,7 +122,8 @@ export default function Header() {
                             onClick={() => handleProtectedNavigation("/cart", "Giỏ hàng")}
                             className="group flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-50 transition-all cursor-pointer"
                         >
-                            <Badge count={user ? 2 : 0} size="small" color="#A435F0" offset={[-2, 4]}>
+                            {/* 4. Đổi count thành items.length (Chỉ đếm khi user đã đăng nhập) */}
+                            <Badge count={user ? items.length : 0} size="small" color="#A435F0" offset={[-2, 4]}>
                                 <ShoppingCartOutlined className="text-[22px] text-gray-600 group-hover:text-[#A435F0] transition-colors" />
                             </Badge>
                         </div>
@@ -152,7 +163,7 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* --- THANH MENUBAR DANH MỤC (PHẦN BẠN CẦN ĐÂY) --- */}
+            {/* --- THANH MENUBAR DANH MỤC --- */}
             <div
                 className="relative border-t border-gray-100 shadow-sm hidden md:block"
                 onMouseLeave={() => setHoveredCategory(null)}
@@ -183,7 +194,7 @@ export default function Header() {
                     )}
                 </div>
 
-                {/* Bar Danh mục cấp 2 (Dropdown đen chuẩn Udemy) */}
+                {/* Bar Danh mục cấp 2 (Dropdown) */}
                 {!isLoading && categories.map((cat) => (
                     cat.children && cat.children.length > 0 && (
                         <div
