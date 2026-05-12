@@ -44,6 +44,13 @@ export default function Header() {
             router.push("/login");
             return;
         }
+
+        // NẾU LÀ HỌC VIÊN MÀ BẤM VÀO GIẢNG DẠY -> CHUYỂN SANG TRANG NÂNG CẤP
+        if (actionName === "Giảng dạy" && user.role === "Student") {
+            router.push("/apply-instructor");
+            return;
+        }
+
         router.push(path);
     };
 
@@ -95,8 +102,8 @@ export default function Header() {
                 <div className="flex items-center justify-end gap-5 flex-shrink-0 min-w-[350px]">
                     <div className="hidden lg:flex items-center gap-5 text-[14px] font-medium text-gray-700">
                         <span
-                            onClick={() => handleProtectedNavigation("/instructor", "Giảng dạy")}
-                            className="hover:text-[#A435F0] cursor-pointer"
+                            className="text-[15px] font-medium text-gray-700 hover:text-learnova-purple cursor-pointer transition-colors"
+                            onClick={() => handleProtectedNavigation("/instructor/dashboard", "Giảng dạy")} // <-- Truyền path là dashboard
                         >
                             Giảng dạy
                         </span>
