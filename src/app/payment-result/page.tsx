@@ -5,8 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Result, Button, Spin } from "antd";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 
 export default function PaymentResultPage() {
+    // Thêm dòng này vào đầu component
+    const { clearCartLocal } = useCartStore();
+
     const searchParams = useSearchParams();
     const router = useRouter();
     const { token } = useAuthStore(); // Lấy token từ store
@@ -50,6 +54,9 @@ export default function PaymentResultPage() {
                 if (response.ok && data.data?.code === '00') {
                     setStatus("success");
                     setMessageText(data.message || "Thanh toán thành công! Khóa học đã được thêm vào Không gian học tập của bạn.");
+
+                    // Gọi hàm dọn giỏ hàng local
+                    clearCartLocal();
                 } else {
                     setStatus("error");
                     setMessageText(data.message || "Thanh toán thất bại hoặc đã bị hủy.");

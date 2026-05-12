@@ -24,6 +24,7 @@ import {
 } from "@ant-design/icons";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 
 const { Panel } = Collapse;
 
@@ -54,6 +55,8 @@ export default function CourseDetailPage() {
     // Thêm state để tạo hiệu ứng loading khi đang chờ link VNPay
     const [isBuying, setIsBuying] = useState(false);
 
+    const { addToCart } = useCartStore();
+
     // Hàm xử lý khi click tên giảng viên
     const handleOpenInstructorModal = async (instructorId: number) => {
         setIsInstructorModalOpen(true);
@@ -72,67 +75,20 @@ export default function CourseDetailPage() {
     };
 
 
-    const handleBuyNow = async () => {
-        if (!user || !token) {
-            message.warning("Vui lòng đăng nhập để mua khóa học!");
+    const handleAddToCartAndCheckout = async (courseId: number) => {
+        if (!token) {
+            message.warning("Vui lòng đăng nhập trước!");
             router.push("/login");
             return;
         }
 
-        setIsBuying(true);
-        message.loading({ content: "Đang tạo giao dịch...", key: "checkout" });
+        // Gọi API lưu vào DB
+        const success = await addToCart(token, courseId);
 
-        try {
-            // 1. Thêm vào giỏ hàng trước
-            const cartRes = await fetch("http://localhost:8000/api/store/cart", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}` // Truyền Token lấy từ Store
-                },
-                body: JSON.stringify({ courseId }),
-            });
-
-            // Xử lý mượt mà: Nếu backend báo "Đã có trong giỏ hàng", ta cứ lờ đi và nhảy tiếp sang thanh toán
-            const cartData = await cartRes.json();
-            if (!cartRes.ok && cartData.message !== 'Khóa học này đã có trong giỏ hàng!') {
-                throw new Error(cartData.message || "Lỗi khi thêm vào giỏ hàng");
-            }
-
-            // 2. Gọi API Checkout để sinh link VNPay
-            const checkoutRes = await fetch("http://localhost:8000/api/store/checkout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}` // Tiếp tục truyền Token
-                }
-            });
-
-            const checkoutData = await checkoutRes.json();
-
-            if (checkoutRes.ok && checkoutData.status === "success") {
-                message.success({ content: "Đang chuyển hướng đến VNPay...", key: "checkout" });
-                // 3. Chuyển hướng người dùng sang link VNPay
-                window.location.href = checkoutData.data.paymentUrl;
-            } else {
-                throw new Error(checkoutData.message || "Lỗi khi khởi tạo đơn hàng");
-            }
-        } catch (error: any) {
-            console.error("Lỗi mua ngay:", error);
-            message.error({ content: error.message || "Có lỗi xảy ra, vui lòng thử lại!", key: "checkout" });
-        } finally {
-            setIsBuying(false);
+        if (success) {
+            // Lưu thành công thì chuyển hướng qua trang giỏ hàng
+            router.push("/cart");
         }
-    };
-
-    const handleAddToCart = () => {
-        if (!user) {
-            message.warning("Vui lòng đăng nhập để thêm vào giỏ hàng!");
-            router.push("/login");
-            return;
-        }
-        // Xử lý logic thêm giỏ hàng cho user đã đăng nhập (sẽ làm ở các bước sau)
-        message.success("Đã thêm khóa học vào giỏ hàng!");
     };
 
     // 1. Fetch dữ liệu Khóa học và 4 Review nổi bật khi load trang
@@ -432,14 +388,14 @@ export default function CourseDetailPage() {
                                         type="primary"
                                         size="large"
                                         className="h-12 !bg-learnova-purple hover:!bg-learnova-purple-hover border-none font-bold text-lg rounded-none transition-all"
-                                        onClick={handleBuyNow}
+                                        onClick={() => handleAddToCartAndCheckout(course.id)}
                                     >
                                         Mua ngay
                                     </Button>
                                     <Button
                                         size="large"
                                         className="h-12 border-gray-900 text-gray-900 font-bold hover:!text-learnova-purple hover:!border-learnova-purple rounded-none transition-all"
-                                        onClick={handleAddToCart}
+                                        onClick={() => handleAddToCartAndCheckout(course.id)}
                                     >
                                         Thêm vào giỏ hàng
                                     </Button>
