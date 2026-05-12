@@ -21,9 +21,16 @@ export default function Footer() {
         fetchSettings();
     }, [fetchSettings]);
 
+    // Kiểm tra xem đường dẫn hiện tại có bắt đầu bằng chữ "/learning" hay không
+    // (Vì URL của trang học đang là /learning/[courseId])
+    if (pathname.startsWith("/learning")) {
+        return null; // Trả về null nghĩa là giấu hẳn Footer đi
+    }
+
     // Ẩn Footer ở trang login/register
     const hideFooterRoutes = ["/login", "/register", "/forgot-password"];
     if (hideFooterRoutes.includes(pathname)) return null;
+
 
     return (
         <footer className="bg-learnova-dark text-white pt-16 pb-8">
