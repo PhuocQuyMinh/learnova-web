@@ -13,11 +13,12 @@ import {
     ClockCircleOutlined,
     GlobalOutlined,
     HeartOutlined,
+    HeartFilled,               // Thêm icon tim đỏ
     CheckOutlined,
     LockOutlined,
     UserOutlined,
-    DownloadOutlined,          // Icon cho tài nguyên tải xuống
-    QuestionCircleOutlined,    // Icon cho bài kiểm tra/trắc nghiệm
+    DownloadOutlined,
+    QuestionCircleOutlined,
     UsergroupAddOutlined,
     PlaySquareOutlined,
     StarOutlined
@@ -30,13 +31,17 @@ const { Panel } = Collapse;
 
 export default function CourseDetailPage() {
     const params = useParams();
-    const router = useRouter(); // Đã có sẵn
-    const { user, token } = useAuthStore(); // Lấy thêm token ra    
-    const courseId = params.id;
+    const router = useRouter();
+    const { user, token } = useAuthStore();
+    const courseId = params.id as string;
 
     // State Khóa học
     const [course, setCourse] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
+    // State Yêu thích (Wishlist)
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
     // State Đánh giá (Reviews)
     const [highlightReviews, setHighlightReviews] = useState<any[]>([]);
@@ -45,51 +50,14 @@ export default function CourseDetailPage() {
     const [modalPage, setModalPage] = useState(1);
     const [modalHasMore, setModalHasMore] = useState(true);
     const [loadingModalReviews, setLoadingModalReviews] = useState(false);
-    const [courseStats, setCourseStats] = useState<any>(null); // Thêm state quản lý Stats
+    const [courseStats, setCourseStats] = useState<any>(null);
 
     // State Modal Giảng viên
     const [isInstructorModalOpen, setIsInstructorModalOpen] = useState(false);
     const [instructorProfile, setInstructorProfile] = useState<any>(null);
     const [loadingInstructor, setLoadingInstructor] = useState(false);
 
-    // Thêm state để tạo hiệu ứng loading khi đang chờ link VNPay
-    const [isBuying, setIsBuying] = useState(false);
-
     const { addToCart } = useCartStore();
-
-    // Hàm xử lý khi click tên giảng viên
-    const handleOpenInstructorModal = async (instructorId: number) => {
-        setIsInstructorModalOpen(true);
-        setLoadingInstructor(true);
-        try {
-            const response = await fetch(`http://localhost:8000/api/users/instructors/${instructorId}/profile`);
-            const result = await response.json();
-            if (result.status === "success") {
-                setInstructorProfile(result.data.instructor);
-            }
-        } catch (error) {
-            console.error("Lỗi tải thông tin giảng viên:", error);
-        } finally {
-            setLoadingInstructor(false);
-        }
-    };
-
-
-    const handleAddToCartAndCheckout = async (courseId: number) => {
-        if (!token) {
-            message.warning("Vui lòng đăng nhập trước!");
-            router.push("/login");
-            return;
-        }
-
-        // Gọi API lưu vào DB
-        const success = await addToCart(token, courseId);
-
-        if (success) {
-            // Lưu thành công thì chuyển hướng qua trang giỏ hàng
-            router.push("/cart");
-        }
-    };
 
     // 1. Fetch dữ liệu Khóa học và 4 Review nổi bật khi load trang
     useEffect(() => {
@@ -99,7 +67,7 @@ export default function CourseDetailPage() {
                 const [courseRes, reviewRes, statsRes] = await Promise.all([
                     fetch(`http://localhost:8000/api/store/coursesDetail/${courseId}`),
                     fetch(`http://localhost:8000/api/courses/${courseId}/reviews?mode=highlights`),
-                    fetch(`http://localhost:8000/api/courses/${courseId}/stats`) // API mới
+                    fetch(`http://localhost:8000/api/courses/${courseId}/stats`)
                 ]);
 
                 const courseResult = await courseRes.json();
@@ -126,7 +94,82 @@ export default function CourseDetailPage() {
         if (courseId) fetchInitialData();
     }, [courseId]);
 
-    // 2. Fetch Review có phân trang cho Modal
+    // 2. Fetch danh sách Yêu thích của user để kiểm tra xem khóa này đã được thả tim chưa
+    useEffect(() => {
+        if (token && courseId) {
+            fetch("http://localhost:8000/api/store/my-favorites", {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        // Kiểm tra xem ID khóa học hiện tại có nằm trong danh sách favorites không
+                        const isFav = data.data.favorites.some((f: any) => f.courseId === parseInt(courseId));
+                        setIsFavorite(isFav);
+                    }
+                })
+                .catch(error => console.error("Lỗi tải wishlist:", error));
+        }
+    }, [token, courseId]);
+
+    // Xử lý Thả/Gỡ tim
+    const handleToggleFavorite = async () => {
+        if (!token) {
+            message.warning("Vui lòng đăng nhập để thêm khóa học vào danh sách yêu thích!");
+            router.push("/login?redirect=/courses/" + courseId);
+            return;
+        }
+
+        setIsTogglingFavorite(true);
+        try {
+            const res = await fetch(`http://localhost:8000/api/store/courses/${courseId}/favorite`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setIsFavorite(data.data.isFavorite); // Backend trả về true/false
+                message.success(data.message || "Đã cập nhật danh sách yêu thích");
+            } else {
+                message.error(data.message);
+            }
+        } catch (error) {
+            message.error("Đã xảy ra lỗi khi thao tác.");
+        } finally {
+            setIsTogglingFavorite(false);
+        }
+    };
+
+    // Hàm xử lý khi click tên giảng viên
+    const handleOpenInstructorModal = async (instructorId: number) => {
+        setIsInstructorModalOpen(true);
+        setLoadingInstructor(true);
+        try {
+            const response = await fetch(`http://localhost:8000/api/users/instructors/${instructorId}/profile`);
+            const result = await response.json();
+            if (result.status === "success") {
+                setInstructorProfile(result.data.instructor);
+            }
+        } catch (error) {
+            console.error("Lỗi tải thông tin giảng viên:", error);
+        } finally {
+            setLoadingInstructor(false);
+        }
+    };
+
+    const handleAddToCartAndCheckout = async (courseId: number) => {
+        if (!token) {
+            message.warning("Vui lòng đăng nhập trước!");
+            router.push("/login");
+            return;
+        }
+
+        const success = await addToCart(token, courseId);
+        if (success) {
+            router.push("/cart");
+        }
+    };
+
     const fetchPaginatedReviews = async (page: number) => {
         setLoadingModalReviews(true);
         try {
@@ -151,7 +194,6 @@ export default function CourseDetailPage() {
         }
     };
 
-    // Mở Modal và load trang 1 nếu chưa có data
     const handleOpenReviewModal = () => {
         setIsReviewModalOpen(true);
         if (modalReviews.length === 0) {
@@ -159,7 +201,6 @@ export default function CourseDetailPage() {
         }
     };
 
-    // Hàm tiện ích: Lấy chữ cái đầu của tên (ví dụ: "Nguyễn Bá Học" -> "NH")
     const getInitials = (name: string) => {
         if (!name) return "U";
         const words = name.trim().split(" ");
@@ -173,7 +214,6 @@ export default function CourseDetailPage() {
         return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
     };
 
-    // Hàm render 1 item Review (Dùng chung cho cả ngoài trang và trong Modal)
     const renderReviewItem = (review: any) => (
         <div key={review.id} className="border-t border-gray-100 py-6 first:border-none">
             <div className="flex gap-4">
@@ -204,14 +244,10 @@ export default function CourseDetailPage() {
 
     return (
         <div className="bg-white min-h-screen pb-20">
-            {/* 1. BANNER KHU VỰC TRÊN */}
-            {/* Giảm pt-8 xuống pt-6 để thu hẹp khoảng cách mép trên */}
             <section className="bg-learnova-dark pt-6 pb-12 text-white border-b border-gray-700">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-10">
                     <div className="lg:col-span-2">
-
                         <Breadcrumb
-                            /* Đặt mb-6 để nó cân xứng chính xác với pt-6 của thẻ section ở trên */
                             className="mb-8 text-sm font-medium"
                             items={[
                                 { title: <Link href="/" className="!text-learnova-purple hover:underline">Trang chủ</Link> },
@@ -219,14 +255,10 @@ export default function CourseDetailPage() {
                                 { title: <span className="text-gray-400">{course.title}</span> }
                             ]}
                         />
-
                         <div style={{ height: "15px" }}></div>
-
-                        {/* THÊM mt-0: Ép thẻ h1 không được tự động sinh thêm khoảng trống phía trên */}
                         <h1 className="text-4xl font-bold mt-0 mb-5 leading-tight">
                             {course.title}
                         </h1>
-
                         <p className="text-lg text-gray-300 mb-6 leading-relaxed">
                             {course.description}
                         </p>
@@ -239,7 +271,6 @@ export default function CourseDetailPage() {
                                     ({course.reviewCount} đánh giá)
                                 </span>
                             </div>
-                            {/* Thêm phần hiển thị số lượng học viên tại đây */}
                             <span className="text-white">
                                 {course.enrollmentCount.toLocaleString('vi-VN')} học viên
                             </span>
@@ -248,7 +279,6 @@ export default function CourseDetailPage() {
                                 onClick={() => handleOpenInstructorModal(course.instructorId)}
                             >{course.instructor.fullName}</span></span>
                         </div>
-
                         <div className="flex items-center gap-6 mt-6 text-sm text-gray-300">
                             <span className="flex items-center gap-2"><ClockCircleOutlined /> Cập nhật lần cuối {new Date(course.updatedAt).toLocaleDateString("vi-VN")}</span>
                             <span className="flex items-center gap-2"><GlobalOutlined /> Tiếng Việt</span>
@@ -257,25 +287,19 @@ export default function CourseDetailPage() {
                 </div>
             </section>
 
-            {/* 2. NỘI DUNG CHÍNH & SIDEBAR */}
             <div className="max-w-7xl mx-auto px-6 py-12 relative">
                 <Row gutter={[48, 32]}>
-                    {/* CỘT TRÁI: CHI TIẾT & CHƯƠNG TRÌNH HỌC */}
                     <Col xs={24} lg={16}>
-
-                        {/* 1. NỘI DUNG CHI TIẾT (COURSE CONTENT) - Hiển thị trước mục lục */}
                         {course.courseContent && (
                             <div className="mb-12 p-6 border border-gray-200 rounded-sm bg-gray-50/30">
                                 <h2 className="text-h2 mb-6">Bạn sẽ học được gì?</h2>
                                 <div
-                                    /* Đã xóa các class ngoặc vuông lỗi, thay bằng class learnova-html-content */
                                     className="text-body max-w-none learnova-html-content"
                                     dangerouslySetInnerHTML={{ __html: course.courseContent }}
                                 />
                             </div>
                         )}
 
-                        {/* Nội dung khóa học (Curriculum) */}
                         <div className="mb-12">
                             <h2 className="text-h2 mb-6">Nội dung khóa học</h2>
                             <div className="flex justify-between mb-4 text-sm text-gray-600">
@@ -283,11 +307,7 @@ export default function CourseDetailPage() {
                                 <span className="text-learnova-purple font-bold cursor-pointer">Mở rộng tất cả</span>
                             </div>
 
-                            <Collapse
-                                defaultActiveKey={['0']}
-                                expandIconPlacement="end"
-                                className="learnova-curriculum border-gray-200"
-                            >
+                            <Collapse defaultActiveKey={['0']} expandIconPlacement="end" className="learnova-curriculum border-gray-200">
                                 {course.sections.map((section: any, index: number) => (
                                     <Panel
                                         header={<span className="font-bold text-base">{section.title}</span>}
@@ -322,39 +342,28 @@ export default function CourseDetailPage() {
                             </Collapse>
                         </div>
 
-                        {/* 3. YÊU CẦU (PREREQUISITES) - Hiển thị sau mục lục */}
                         {course.prerequisites && (
                             <div className="mb-10">
                                 <h2 className="text-h2 mb-4">Yêu cầu</h2>
-                                <div
-                                    className="text-body prose prose-slate"
-                                    dangerouslySetInnerHTML={{ __html: course.prerequisites }}
-                                />
+                                <div className="text-body prose prose-slate" dangerouslySetInnerHTML={{ __html: course.prerequisites }} />
                             </div>
                         )}
 
-                        {/* 4. ĐỐI TƯỢNG HỌC VIÊN (TARGET AUDIENCE) - Hiển thị sau mục lục */}
                         {course.targetAudience && (
                             <div className="mb-10">
                                 <h2 className="text-h2 mb-4">Đối tượng của khóa học này</h2>
-                                <div
-                                    className="text-body prose prose-slate"
-                                    dangerouslySetInnerHTML={{ __html: course.targetAudience }}
-                                />
+                                <div className="text-body prose prose-slate" dangerouslySetInnerHTML={{ __html: course.targetAudience }} />
                             </div>
                         )}
 
-                        {/* KHU VỰC REVIEW HIGHLIGHTS */}
                         {highlightReviews.length > 0 && (
                             <div className="mb-12">
                                 <h2 className="text-h2 mb-6 flex items-center gap-2">
                                     Đánh giá khóa học
                                 </h2>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                     {highlightReviews.map(renderReviewItem)}
                                 </div>
-
                                 <div className="mt-6">
                                     <Button
                                         className="font-bold h-10 px-6 border-gray-900 text-gray-900 hover:!border-learnova-purple hover:!text-learnova-purple rounded-none transition-all"
@@ -367,7 +376,7 @@ export default function CourseDetailPage() {
                         )}
                     </Col>
 
-                    {/* CỘT PHẢI: SIDEBAR MUA HÀNG */}
+                    {/* CỘT PHẢI: SIDEBAR MUA HÀNG CÓ NÚT THẢ TIM */}
                     <Col xs={24} lg={8}>
                         <div className="lg:absolute lg:-top-64 lg:right-6 w-full max-w-[380px] bg-white border border-gray-200 shadow-xl z-10">
                             <div className="relative group cursor-pointer">
@@ -392,13 +401,31 @@ export default function CourseDetailPage() {
                                     >
                                         Mua ngay
                                     </Button>
-                                    <Button
-                                        size="large"
-                                        className="h-12 border-gray-900 text-gray-900 font-bold hover:!text-learnova-purple hover:!border-learnova-purple rounded-none transition-all"
-                                        onClick={() => handleAddToCartAndCheckout(course.id)}
-                                    >
-                                        Thêm vào giỏ hàng
-                                    </Button>
+
+                                    {/* HÀNG NÚT: THÊM GIỎ HÀNG VÀ YÊU THÍCH */}
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="large"
+                                            className="flex-1 h-12 border-gray-900 text-gray-900 font-bold hover:!text-learnova-purple hover:!border-learnova-purple rounded-none transition-all"
+                                            onClick={() => handleAddToCartAndCheckout(course.id)}
+                                        >
+                                            Thêm vào giỏ hàng
+                                        </Button>
+
+                                        <Button
+                                            size="large"
+                                            className="w-12 h-12 flex items-center justify-center border-gray-900 rounded-none transition-all hover:!border-learnova-purple hover:!text-learnova-purple"
+                                            onClick={handleToggleFavorite}
+                                            loading={isTogglingFavorite}
+                                            title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                                        >
+                                            {isFavorite ? (
+                                                <HeartFilled className="text-red-500 text-xl" />
+                                            ) : (
+                                                <HeartOutlined className="text-xl" />
+                                            )}
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 <div className="text-center mt-4">
@@ -408,26 +435,21 @@ export default function CourseDetailPage() {
                                 <div className="mt-8">
                                     <h4 className="font-bold mb-3">Khóa học này bao gồm:</h4>
                                     <ul className="space-y-3 p-0 list-none text-sm text-gray-700">
-
-                                        {/* Render động dựa trên dữ liệu API, chỉ hiện khi lớn hơn 0 */}
                                         {courseStats?.totalStudyHours > 0 && (
                                             <li className="flex items-center gap-3">
                                                 <PlayCircleOutlined /> {courseStats.totalStudyHours} giờ video theo yêu cầu
                                             </li>
                                         )}
-
                                         {courseStats?.totalArticles > 0 && (
                                             <li className="flex items-center gap-3">
                                                 <FileTextOutlined /> {courseStats.totalArticles} bài viết
                                             </li>
                                         )}
-
                                         {courseStats?.totalAttachments > 0 && (
                                             <li className="flex items-center gap-3">
                                                 <DownloadOutlined /> {courseStats.totalAttachments} tài nguyên tải xuống
                                             </li>
                                         )}
-
                                         {courseStats?.totalQuizzes > 0 && (
                                             <li className="flex items-center gap-3">
                                                 <QuestionCircleOutlined /> {courseStats.totalQuizzes} bài tập trắc nghiệm
@@ -442,7 +464,7 @@ export default function CourseDetailPage() {
                 </Row>
             </div>
 
-            {/* 3. MODAL XEM TOÀN BỘ ĐÁNH GIÁ */}
+            {/* MODAL REVIEW */}
             <Modal
                 title={
                     <div className="text-h3 flex items-center gap-2 pb-4 border-b border-gray-200">
@@ -453,15 +475,12 @@ export default function CourseDetailPage() {
                 onCancel={() => setIsReviewModalOpen(false)}
                 footer={null}
                 width={800}
-                styles={{
-                    body: { maxHeight: '70vh', overflowY: 'auto', paddingRight: '12px' }
-                }}
+                styles={{ body: { maxHeight: '70vh', overflowY: 'auto', paddingRight: '12px' } }}
                 centered
             >
                 <div className="flex flex-col gap-4 mt-4">
                     {modalReviews.map(renderReviewItem)}
 
-                    {/* Nút Load More trong Modal */}
                     {modalHasMore && (
                         <div className="text-center py-6">
                             <Button
@@ -478,13 +497,10 @@ export default function CourseDetailPage() {
                     )}
                 </div>
             </Modal>
-            {/* 4. MODAL THÔNG TIN GIẢNG VIÊN */}
+
+            {/* MODAL GIẢNG VIÊN */}
             <Modal
-                title={
-                    <div className="text-h3 pb-4 border-b border-gray-200 text-learnova-dark">
-                        Hồ sơ Giảng viên
-                    </div>
-                }
+                title={<div className="text-h3 pb-4 border-b border-gray-200 text-learnova-dark">Hồ sơ Giảng viên</div>}
                 open={isInstructorModalOpen}
                 onCancel={() => setIsInstructorModalOpen(false)}
                 footer={null}
@@ -492,12 +508,9 @@ export default function CourseDetailPage() {
                 centered
             >
                 {loadingInstructor ? (
-                    <div className="flex justify-center py-12">
-                        <Spin size="large" />
-                    </div>
+                    <div className="flex justify-center py-12"><Spin size="large" /></div>
                 ) : instructorProfile ? (
                     <div className="flex flex-col gap-6 mt-6">
-                        {/* Header: Avatar + Tên */}
                         <div className="flex items-center gap-6">
                             <Avatar
                                 size={80}
@@ -508,15 +521,11 @@ export default function CourseDetailPage() {
                                 {!instructorProfile.avatarUrl && getInitials(instructorProfile.fullName)}
                             </Avatar>
                             <div>
-                                <h3 className="text-2xl font-bold text-learnova-dark mb-1">
-                                    {instructorProfile.fullName}
-                                </h3>
-                                {/* Ẩn email đi nếu không muốn học viên thấy, hoặc hiện mờ mờ */}
+                                <h3 className="text-2xl font-bold text-learnova-dark mb-1">{instructorProfile.fullName}</h3>
                                 <p className="text-gray-500 text-sm">{instructorProfile.email}</p>
                             </div>
                         </div>
 
-                        {/* Thống kê */}
                         <div className="flex flex-wrap gap-8 py-5 border-y border-gray-100">
                             <div className="flex flex-col gap-1">
                                 <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">Tổng học viên</span>
@@ -541,34 +550,29 @@ export default function CourseDetailPage() {
                             </div>
                         </div>
 
-                        {/* Giới thiệu (Bio) */}
                         <div>
                             <h4 className="font-bold text-lg mb-3 text-learnova-dark">Về tôi</h4>
                             {instructorProfile.bio ? (
-                                <div
-                                    className="text-body prose prose-slate max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: instructorProfile.bio }}
-                                />
+                                <div className="text-body prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: instructorProfile.bio }} />
                             ) : (
                                 <p className="text-gray-500 italic">Giảng viên này chưa cập nhật thông tin giới thiệu.</p>
                             )}
                         </div>
                     </div>
                 ) : (
-                    <div className="text-center py-10 text-gray-500">
-                        Không thể tải thông tin giảng viên lúc này.
-                    </div>
+                    <div className="text-center py-10 text-gray-500">Không thể tải thông tin giảng viên lúc này.</div>
                 )}
             </Modal>
+
             <style jsx global>{`
-        .learnova-curriculum .ant-collapse-header {
-          background: #f7f9fa !important;
-          padding: 16px 24px !important;
-        }
-        .learnova-curriculum .ant-collapse-content-box {
-          padding: 0 24px !important;
-        }
-      `}</style>
+                .learnova-curriculum .ant-collapse-header {
+                  background: #f7f9fa !important;
+                  padding: 16px 24px !important;
+                }
+                .learnova-curriculum .ant-collapse-content-box {
+                  padding: 0 24px !important;
+                }
+            `}</style>
         </div >
     );
 }
